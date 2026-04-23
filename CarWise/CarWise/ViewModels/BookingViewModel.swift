@@ -4,7 +4,7 @@ import SwiftUI
 @MainActor
 final class BookingViewModel: ObservableObject {
 
-    @Published var selectedDate: Date = Self.defaultInitialDay()
+    @Published var selectedDate: Date = BookingViewModel.defaultInitialDay()
     @Published var selectedSlotIndex: Int?
     @Published var topic: BookingTopic = .firstTimeBuyer
     @Published var phone: String = ""
