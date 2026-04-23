@@ -17,12 +17,14 @@ final class AppState: ObservableObject {
         self.dayLogStore = dayLogStore
 
         settingsStore.$settings
+            .dropFirst()
             .sink { [weak self] settings in
                 self?.applySettings(settings)
             }
             .store(in: &cancellables)
 
         dayLogStore.$logs
+            .dropFirst()
             .sink { [weak self] _ in
                 guard let self else { return }
                 NotificationManager.shared.reschedule(

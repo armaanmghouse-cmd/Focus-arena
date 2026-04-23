@@ -12,16 +12,21 @@ final class DayLogStore: ObservableObject {
             from: filename,
             fallback: []
         )
+        ensureTodayExists()
+    }
+
+    func ensureTodayExists() {
+        if !logs.contains(where: { DayLog.isSameDay($0.date, Date()) }) {
+            logs.append(DayLog(date: DayLog.startOfDay()))
+            persist()
+        }
     }
 
     var today: DayLog {
         if let existing = logs.first(where: { DayLog.isSameDay($0.date, Date()) }) {
             return existing
         }
-        let new = DayLog(date: DayLog.startOfDay())
-        logs.append(new)
-        persist()
-        return new
+        return DayLog(date: DayLog.startOfDay())
     }
 
     var yesterday: DayLog? {
@@ -39,7 +44,8 @@ final class DayLogStore: ObservableObject {
     }
 
     func updateToday(_ mutate: (inout DayLog) -> Void) {
-        var log = today
+        ensureTodayExists()
+        guard var log = logs.first(where: { DayLog.isSameDay($0.date, Date()) }) else { return }
         mutate(&log)
         log.score = ScoringService.score(for: log)
         upsert(log)
