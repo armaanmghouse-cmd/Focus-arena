@@ -1,6 +1,9 @@
 import Foundation
 import SwiftUI
 import Combine
+#if canImport(UIKit)
+import UIKit
+#endif
 
 @MainActor
 final class SessionManager: ObservableObject {
@@ -62,11 +65,18 @@ final class SessionManager: ObservableObject {
 
         persistActive(session)
         startTickTimer()
+        keepScreenAwake(true)
         NotificationService.shared.scheduleSessionCompletion(after: duration, task: session.task)
         if settings.settings.soundEnabled {
             SoundService.shared.startAmbient()
         }
         HapticService.shared.impact(.heavy)
+    }
+
+    private func keepScreenAwake(_ awake: Bool) {
+        #if canImport(UIKit)
+        UIApplication.shared.isIdleTimerDisabled = awake
+        #endif
     }
 
     func surrender() {
@@ -189,6 +199,7 @@ final class SessionManager: ObservableObject {
     private func cleanupTimers() {
         tickTimer?.invalidate(); tickTimer = nil
         graceTimer?.invalidate(); graceTimer = nil
+        keepScreenAwake(false)
     }
 
     // MARK: - Outcomes
