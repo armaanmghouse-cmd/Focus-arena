@@ -1,4 +1,10 @@
-# Get Focus Arena onto your iPhone (no Mac required)
+# Get Focus Arena / Next Move onto your iPhone (no Mac required)
+
+This repo now contains **two** apps that share the same build flow:
+- **Focus Arena** (root `project.yml` → workflow `Build Unsigned IPA` → artifact `FocusArena-unsigned-ipa`)
+- **Next Move** (`NextMove/project.yml` → workflow `Build NextMove Unsigned IPA` → artifact `NextMove-unsigned-ipa`)
+
+Both workflows run on every push. Download whichever artifact you want and sideload it with the exact same steps below — just substitute the filename.
 
 You need: this folder, a Windows PC, an iPhone, a free GitHub account, a free Apple ID, and a USB-to-Lightning/USB-C cable.
 
