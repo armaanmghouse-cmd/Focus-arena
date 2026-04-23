@@ -1,0 +1,82 @@
+name: Build CarWise Unsigned IPA
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'CarWise/**'
+      - '.github/workflows/build-carwise.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select latest Xcode
+        run: |
+          set -x
+          ls /Applications/ | grep -i xcode || true
+          XCODE_PATH="$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1)"
+          if [ -z "$XCODE_PATH" ]; then
+            XCODE_PATH="/Applications/Xcode.app"
+          fi
+          echo "Using $XCODE_PATH"
+          sudo xcode-select -s "$XCODE_PATH"
+          xcodebuild -version
+          xcodebuild -showsdks | grep -i ios || true
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: CarWise
+        run: |
+          xcodegen generate
+          ls -la CarWise.xcodeproj
+          xcodebuild -list -project CarWise.xcodeproj
+
+      - name: Build (unsigned)
+        working-directory: CarWise
+        run: |
+          set -x
+          xcodebuild \
+            -project CarWise.xcodeproj \
+            -scheme CarWise \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
+            -derivedDataPath build \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            PROVISIONING_PROFILE="" \
+            DEVELOPMENT_TEAM="" \
+            ONLY_ACTIVE_ARCH=NO \
+            build
+
+      - name: Package IPA
+        working-directory: CarWise
+        run: |
+          APP_PATH="build/Build/Products/Release-iphoneos/CarWise.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "App bundle not found at $APP_PATH"
+            ls -R build/Build/Products || true
+            exit 1
+          fi
+          mkdir -p Payload
+          cp -r "$APP_PATH" Payload/
+          zip -qr CarWise-unsigned.ipa Payload
+          ls -lh CarWise-unsigned.ipa
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CarWise-unsigned-ipa
+          path: CarWise/CarWise-unsigned.ipa
+          retention-days: 30
+          if-no-files-found: error
